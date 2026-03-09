@@ -228,5 +228,58 @@ classdef TestCSLibrary < matlab.unittest.TestCase
             testCase.verifyError(@() alg.solve(badMatrix, badVector), ...
                 'cs.exceptions.DimensionMismatchException');
         end
+        
+        function testBCSBasic(testCase)
+            opts = cs.core.Options('MaxIterations', 200, 'Verbose', false);
+            alg = cs.algorithms.sbl.BCS(opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyEqual(size(result.X), [256, 1]);
+            testCase.verifyTrue(result.Iterations <= 200);
+            testCase.verifyTrue(isfield(info, 'noise_variance'));
+            
+            metrics = result.evaluate(testCase.TestSignal);
+            testCase.verifyLessThan(metrics.NMSE, 0.15);
+        end
+        
+        function testBCSConvergence(testCase)
+            opts = cs.core.Options('MaxIterations', 500, 'Tolerance', 1e-6, 'Verbose', false);
+            alg = cs.algorithms.sbl.BCS(opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyTrue(info.converged || info.iterations >= 100);
+            testCase.verifyTrue(info.support_size >= testCase.Sparsity * 0.5);
+        end
+        
+        function testBCSHistoryTracking(testCase)
+            opts = cs.core.Options('MaxIterations', 50, 'Verbose', false);
+            alg = cs.algorithms.sbl.BCS(opts);
+            
+            [result, ~] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyTrue(~isempty(result.History));
+            testCase.verifyTrue(length(result.History.ObjectiveValues) > 0);
+        end
+        
+        function testBCSWithCleanSignal(testCase)
+            opts = cs.core.Options('MaxIterations', 300, 'Verbose', false);
+            alg = cs.algorithms.sbl.BCS(opts);
+            
+            cleanMeasurements = testCase.TestMatrix * testCase.TestSignal;
+            [result, ~] = alg.solve(testCase.TestMatrix, cleanMeasurements);
+            
+            metrics = result.evaluate(testCase.TestSignal);
+            testCase.verifyGreaterThan(metrics.SNR, 20);
+        end
+        
+        function testBCSAlgorithmInfo(testCase)
+            alg = cs.algorithms.sbl.BCS();
+            info = alg.getAlgorithmInfo();
+            
+            testCase.verifyEqual(info.Name, 'Bayesian Compressive Sensing');
+            testCase.verifyTrue(~isempty(info.Reference));
+        end
     end
 end
