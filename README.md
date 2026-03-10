@@ -405,75 +405,6 @@ testCase.testMSBLBasic();
 
 ---
 
-## 🤝 贡献指南
-
-欢迎对本项目做出贡献！
-
-### 如何贡献
-
-1. **Fork 本仓库**
-   ```bash
-   git clone https://github.com/yuruofeng/compressive-sensing-algorithm.git
-   ```
-
-2. **创建特性分支**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **编写代码**
-   - 遵循现有代码风格
-   - 添加必要的注释和文档
-   - 编写单元测试
-
-4. **提交更改**
-   ```bash
-   git commit -m "Add: 描述你的更改"
-   ```
-
-5. **推送分支**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-6. **创建 Pull Request**
-
-### 代码规范
-
-- 使用 MATLAB 命名空间组织代码
-- 所有算法继承自 `cs.core.Algorithm` 基类
-- 函数和类需要包含完整的注释文档
-- 添加输入验证和错误处理
-
-### 添加新算法
-
-1. 在对应子目录下创建算法类文件
-2. 继承 `cs.core.Algorithm` 抽象基类
-3. 实现所有必需的抽象方法
-4. 在 `demos/AlgorithmRegistry.m` 中注册
-5. 编写测试用例
-6. 更新文档
-
----
-
-## 📚 参考文献
-
-### 稀疏贝叶斯学习
-- Tipping, M. E. (2001). "Sparse Bayesian Learning and the Relevance Vector Machine." *Journal of Machine Learning Research*
-- Zhang, Z., & Rao, B. D. (2013). "Sparse Signal Recovery With Temporally Correlated Source Vectors Using Sparse Bayesian Learning." *IEEE Journal of Selected Topics in Signal Processing*
-
-### 贪婪算法
-- Tropp, J. A., & Gilbert, A. C. (2007). "Signal Recovery From Random Measurements Via Orthogonal Matching Pursuit." *IEEE Transactions on Information Theory*
-
-### 迭代阈值算法
-- Blumensath, T., & Davies, M. E. (2009). "Iterative Hard Thresholding for Compressed Sensing." *Applied and Computational Harmonic Analysis*
-- Beck, A., & Teboulle, M. (2009). "A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems." *SIAM Journal on Imaging Sciences*
-
-### 概率推断算法
-- Donoho, D. L., Maleki, A., & Montanari, A. (2009). "Message-Passing Algorithms for Compressed Sensing." *Proceedings of the National Academy of Sciences*
-
----
-
 ## 📝 更新日志
 
 ### v2.0.0 (2026-03-10)
@@ -502,9 +433,3 @@ testCase.testMSBLBasic();
 ## 📄 许可证
 
 本项目仅供学术研究和教学使用。
-
----
-
-<p align="center">
-  <i>🔬 压缩感知工具箱 - 高效的稀疏信号重构解决方案</i>
-</p>
