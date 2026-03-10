@@ -281,5 +281,122 @@ classdef TestCSLibrary < matlab.unittest.TestCase
             testCase.verifyEqual(info.Name, 'Bayesian Compressive Sensing');
             testCase.verifyTrue(~isempty(info.Reference));
         end
+        
+        function testOMPBasic(testCase)
+            opts = cs.core.Options('MaxIterations', 100, 'Verbose', false);
+            alg = cs.algorithms.greedy.OMP('Sparsity', testCase.Sparsity, opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyEqual(size(result.X), [256, 1]);
+            testCase.verifyTrue(result.Iterations <= testCase.Sparsity);
+            testCase.verifyTrue(isfield(info, 'support_indices'));
+            
+            metrics = result.evaluate(testCase.TestSignal);
+            testCase.verifyLessThan(metrics.NMSE, 0.2);
+        end
+        
+        function testOMPHistoryTracking(testCase)
+            opts = cs.core.Options('MaxIterations', 50, 'Verbose', false);
+            alg = cs.algorithms.greedy.OMP('Sparsity', 20, opts);
+            
+            [result, ~] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyTrue(~isempty(result.History));
+        end
+        
+        function testIHTBasic(testCase)
+            opts = cs.core.Options('MaxIterations', 200, 'Verbose', false);
+            alg = cs.algorithms.iterative.IHT('Sparsity', testCase.Sparsity, opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyEqual(size(result.X), [256, 1]);
+            testCase.verifyTrue(isfield(info, 'step_size'));
+            
+            metrics = result.evaluate(testCase.TestSignal);
+            testCase.verifyLessThan(metrics.NMSE, 0.3);
+        end
+        
+        function testIHTConvergence(testCase)
+            opts = cs.core.Options('MaxIterations', 500, 'Tolerance', 1e-6, 'Verbose', false);
+            alg = cs.algorithms.iterative.IHT('Sparsity', testCase.Sparsity, opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyTrue(info.iterations <= 500);
+        end
+        
+        function testFISTABasic(testCase)
+            opts = cs.core.Options('MaxIterations', 200, 'Verbose', false);
+            alg = cs.algorithms.iterative.FISTA('Lambda', 0.01, opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyEqual(size(result.X), [256, 1]);
+            testCase.verifyTrue(isfield(info, 'lambda'));
+            
+            metrics = result.evaluate(testCase.TestSignal);
+            testCase.verifyLessThan(metrics.NMSE, 0.2);
+        end
+        
+        function testFISTAConvergence(testCase)
+            opts = cs.core.Options('MaxIterations', 500, 'Tolerance', 1e-6, 'Verbose', false);
+            alg = cs.algorithms.iterative.FISTA('Lambda', 0.005, opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyTrue(info.converged || info.iterations >= 100);
+        end
+        
+        function testAMPBasic(testCase)
+            opts = cs.core.Options('MaxIterations', 100, 'Verbose', false);
+            alg = cs.algorithms.probabilistic.AMP('Sigma', testCase.NoiseLevel, opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyEqual(size(result.X), [256, 1]);
+            testCase.verifyTrue(isfield(info, 'sigma'));
+            
+            metrics = result.evaluate(testCase.TestSignal);
+            testCase.verifyLessThan(metrics.NMSE, 0.3);
+        end
+        
+        function testAMPConvergence(testCase)
+            opts = cs.core.Options('MaxIterations', 200, 'Tolerance', 1e-5, 'Verbose', false);
+            alg = cs.algorithms.probabilistic.AMP('Sigma', testCase.NoiseLevel, opts);
+            
+            [result, info] = alg.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            testCase.verifyTrue(info.iterations <= 200);
+        end
+        
+        function testAlgorithmComparison(testCase)
+            opts = cs.core.Options('MaxIterations', 200, 'Verbose', false);
+            
+            algOMP = cs.algorithms.greedy.OMP('Sparsity', testCase.Sparsity, opts);
+            algIHT = cs.algorithms.iterative.IHT('Sparsity', testCase.Sparsity, opts);
+            algFISTA = cs.algorithms.iterative.FISTA('Lambda', 0.01, opts);
+            algAMP = cs.algorithms.probabilistic.AMP('Sigma', testCase.NoiseLevel, opts);
+            
+            [resultOMP, ~] = algOMP.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            [resultIHT, ~] = algIHT.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            [resultFISTA, ~] = algFISTA.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            [resultAMP, ~] = algAMP.solve(testCase.TestMatrix, testCase.TestMeasurements);
+            
+            metricsOMP = resultOMP.evaluate(testCase.TestSignal);
+            metricsIHT = resultIHT.evaluate(testCase.TestSignal);
+            metricsFISTA = resultFISTA.evaluate(testCase.TestSignal);
+            metricsAMP = resultAMP.evaluate(testCase.TestSignal);
+            
+            testCase.verifyGreaterThan(metricsOMP.SNR, 5);
+            testCase.verifyGreaterThan(metricsFISTA.SNR, 5);
+            
+            fprintf('\n算法性能对比:\n');
+            fprintf('  OMP:    SNR=%.2f dB, NMSE=%.4f\n', metricsOMP.SNR, metricsOMP.NMSE);
+            fprintf('  IHT:    SNR=%.2f dB, NMSE=%.4f\n', metricsIHT.SNR, metricsIHT.NMSE);
+            fprintf('  FISTA:  SNR=%.2f dB, NMSE=%.4f\n', metricsFISTA.SNR, metricsFISTA.NMSE);
+            fprintf('  AMP:    SNR=%.2f dB, NMSE=%.4f\n', metricsAMP.SNR, metricsAMP.NMSE);
+        end
     end
 end
